@@ -24,7 +24,7 @@ public class GiaoDichManagementUI extends JFrame {
     private final JTable giaoDichTable;
     private final JComboBox<String> loaiGiaoDichComboBox;
     private final JTextField maGiaoDichField, ngayGiaoDichField, donGiaField, dienTichField, thongTinKhacField;
-    private final JButton addButton, removeButton, editButton;
+    private final JButton addButton, removeButton, editButton, findButton;
 
     public GiaoDichManagementUI(GiaoDichService giaoDichService) {
         this.giaoDichService = giaoDichService;
@@ -47,6 +47,7 @@ public class GiaoDichManagementUI extends JFrame {
         addButton = new JButton("Thêm");
         removeButton = new JButton("Xóa");
         editButton = new JButton("Sửa");
+        findButton = new  JButton("Tìm kiếm");
 
         // Button actions
         addButton.addActionListener(new ActionListener() {
@@ -67,6 +68,13 @@ public class GiaoDichManagementUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 editGiaoDich();
+            }
+        });
+
+        findButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                findGiaodich();
             }
         });
 
@@ -117,6 +125,7 @@ public class GiaoDichManagementUI extends JFrame {
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
         buttonPanel.add(editButton);
+        buttonPanel.add(findButton);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(new JScrollPane(giaoDichTable), BorderLayout.CENTER);
@@ -225,6 +234,17 @@ public class GiaoDichManagementUI extends JFrame {
             }
         } else {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn giao dịch để sửa.");
+        }
+    }
+    private void findGiaodich() {
+        String MGD = JOptionPane.showInputDialog(this, "Vui lòng nhập mã giao dịch để tìm:");
+        if (MGD != null && !MGD.isEmpty()) {
+                GiaoDich magiaodich = giaoDichService.getGiaoDichByMa(MGD);
+                if (magiaodich != null) {
+                    populateInputFields(magiaodich);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không có loại giao dịch nào với mã: " + MGD);
+                }
         }
     }
 
