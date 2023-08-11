@@ -1,9 +1,10 @@
-package Domain;
+package Persistence;
 
 import java.util.List;
+
 import Domain.Model.GiaoDich;
 
-public interface GiaoDichService {
+public interface GiaoDichDAO {
     void addGiaoDich(GiaoDich giaoDich);
     void removeGiaoDich(String maGiaoDich);
     void editGiaoDich(String maGiaoDich, GiaoDich giaoDich);
@@ -11,6 +12,7 @@ public interface GiaoDichService {
     List<GiaoDich> getAllGiaoDich();
     int countLoaiDat(String loaiDat);
     int countLoaiNha(String loaiNha);
-    double averageThanhTienDat();   
+    double averageThanhTienDat();
+   
     List<GiaoDich> searchGiaoDichByMa(String maGiaoDich);
 }

@@ -1,4 +1,4 @@
-package Domain;
+package Domain.Model;
 
 import java.util.Date;
 
@@ -8,6 +8,7 @@ public class GiaoDichDat extends GiaoDich {
     public GiaoDichDat(String maGiaoDich, Date ngayGiaoDich, double donGia, double dienTich, String thongTinKhac) {
         super(maGiaoDich, ngayGiaoDich, donGia, dienTich, thongTinKhac);
         this.loaiDat = thongTinKhac;
+
     }
 
     public String getLoaiDat() {
@@ -20,10 +21,12 @@ public class GiaoDichDat extends GiaoDich {
 
     @Override
     public double tinhThanhTien() {
-        if ("B".equalsIgnoreCase(loaiDat)) {
+        if ("Loại B".equalsIgnoreCase(loaiDat)) {
             return getDonGia() * getDienTich();
-        } else if ("A".equalsIgnoreCase(loaiDat)) {
+        } else if ("Loại A".equalsIgnoreCase(loaiDat)) {
             return getDonGia() * getDienTich() * 1.5;
+        } else if ("Loại C".equalsIgnoreCase(loaiDat)) {
+            return getDonGia() * getDienTich();
         } else {
             return 0;
         }

@@ -1,63 +1,63 @@
 package Persistence;
 
-import Domain.GiaoDich;
-import Domain.GiaoDichDat;
-import Domain.GiaoDichNha;
+import Domain.Model.GiaoDich;
+import Domain.Model.GiaoDichDat;
+import Domain.Model.GiaoDichNha;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GiaDichJdbcGateway implements GiaDichGateway {
-    private Connection connection;
+    private final String jdbcUrl;
+    private final String username;
+    private final String password;
 
-    public GiaDichJdbcGateway() {
-        // Initialize the database connection here (replace dbUrl, username, and
-        // password with your SQL Server credentials)
-        String dbUrl = "jdbc:sqlserver://localhost;databaseName=GiaoDich";
-        String username = "sa";
-        String password = "12345";
-        try {
-            connection = DriverManager.getConnection(dbUrl, username, password);
+    public GiaDichJdbcGateway(String jdbcUrl, String username, String password) {
+        this.jdbcUrl = "jdbc:sqlserver://localhost:1433;databaseName=GiaoDich;encrypt=true;trustServerCertificate=true";
+        this.username = "sa";
+        this.password = "12345";
+    }
+
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(jdbcUrl, username, password);
+    }
+
+    @Override
+    public void addGiaoDich(GiaoDich giaoDich) {
+        try (Connection connection = getConnection()) {
+            String sql = "INSERT INTO GiaoDich (MaGiaoDich, NgayGiaoDich, DonGia, DienTich, ThongTinKhac) VALUES (?, ?, ?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                setPreparedStatementValues(statement, giaoDich);
+                statement.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void saveGiaoDich(GiaoDich giaoDich) {
-        String sql = "INSERT INTO GiaoDich (maGiaoDich, ngayGiaoDich, loaiGiaoDich, soTien) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, giaoDich.getMaGiaoDich());
-            statement.setDate(2, new Date(giaoDich.getNgayGiaoDich().getTime()));
-            statement.setString(3, giaoDich.getClass().getSimpleName()); // Lưu tên lớp con vào cột loaiGiaoDich
-            statement.setDouble(4, giaoDich.tinhThanhTien());
-            statement.executeUpdate();
+    public void removeGiaoDich(String maGiaoDich) {
+        try (Connection connection = getConnection()) {
+            String sql = "DELETE FROM GiaoDich WHERE MaGiaoDich = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, maGiaoDich);
+                statement.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void updateGiaoDich(String maGiaoDich, GiaoDich giaoDich) {
-        String sql = "UPDATE GiaoDich SET ngayGiaoDich = ?, loaiGiaoDich = ?, soTien = ? WHERE maGiaoDich = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDate(1, new Date(giaoDich.getNgayGiaoDich().getTime()));
-            statement.setString(2, giaoDich.getClass().getSimpleName()); // Lưu tên lớp con vào cột loaiGiaoDich
-            statement.setDouble(3, giaoDich.tinhThanhTien());
-            statement.setString(4, maGiaoDich);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void deleteGiaoDich(String maGiaoDich) {
-        String sql = "DELETE FROM GiaoDich WHERE maGiaoDich = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, maGiaoDich);
-            statement.executeUpdate();
+    public void editGiaoDich(String maGiaoDich, GiaoDich updatedGiaoDich) {
+        try (Connection connection = getConnection()) {
+            String sql = "UPDATE GiaoDich SET NgayGiaoDich = ?, DonGia = ?, DienTich = ?, ThongTinKhac = ? WHERE MaGiaoDich = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                setPreparedStatementValues(statement, updatedGiaoDich);
+                statement.setString(5, maGiaoDich);
+                statement.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -65,26 +65,14 @@ public class GiaDichJdbcGateway implements GiaDichGateway {
 
     @Override
     public GiaoDich getGiaoDichByMa(String maGiaoDich) {
-        String sql = "SELECT * FROM GiaoDich WHERE maGiaoDich = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, maGiaoDich);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                String loaiGiaoDich = resultSet.getString("loaiGiaoDich");
-                if ("GiaoDichDat".equalsIgnoreCase(loaiGiaoDich)) {
-                    String ma = resultSet.getString("maGiaoDich");
-                    java.util.Date ngay = resultSet.getDate("ngayGiaoDich");
-                    double donGia = resultSet.getDouble("donGia");
-                    double dienTich = resultSet.getDouble("dienTich");
-                    String loaiDat = resultSet.getString("loaiDat");
-                    return new GiaoDichDat(ma, ngay, donGia, dienTich, loaiDat);
-                } else if ("GiaoDichNha".equalsIgnoreCase(loaiGiaoDich)) {
-                    String ma = resultSet.getString("maGiaoDich");
-                    java.util.Date ngay = resultSet.getDate("ngayGiaoDich");
-                    double donGia = resultSet.getDouble("donGia");
-                    double dienTich = resultSet.getDouble("dienTich");
-                    String loaiNha = resultSet.getString("loaiNha");
-                    return new GiaoDichNha(ma, ngay, donGia, dienTich, loaiNha);
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT * FROM GiaoDich WHERE MaGiaoDich = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, maGiaoDich);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return mapResultSetToGiaoDich(resultSet);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -96,30 +84,127 @@ public class GiaDichJdbcGateway implements GiaDichGateway {
     @Override
     public List<GiaoDich> getAllGiaoDich() {
         List<GiaoDich> giaoDichList = new ArrayList<>();
-        String sql = "SELECT * FROM GiaoDich";
-        try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery(sql);
-            while (resultSet.next()) {
-                String loaiGiaoDich = resultSet.getString("loaiGiaoDich");
-                if ("GiaoDichDat".equalsIgnoreCase(loaiGiaoDich)) {
-                    String ma = resultSet.getString("maGiaoDich");
-                    java.util.Date ngay = resultSet.getDate("ngayGiaoDich");
-                    double donGia = resultSet.getDouble("donGia");
-                    double dienTich = resultSet.getDouble("dienTich");
-                    String loaiDat = resultSet.getString("loaiDat");
-                    giaoDichList.add(new GiaoDichDat(ma, ngay, donGia, dienTich, loaiDat));
-                } else if ("GiaoDichNha".equalsIgnoreCase(loaiGiaoDich)) {
-                    String ma = resultSet.getString("maGiaoDich");
-                    java.util.Date ngay = resultSet.getDate("ngayGiaoDich");
-                    double donGia = resultSet.getDouble("donGia");
-                    double dienTich = resultSet.getDouble("dienTich");
-                    String loaiNha = resultSet.getString("loaiNha");
-                    giaoDichList.add(new GiaoDichNha(ma, ngay, donGia, dienTich, loaiNha));
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT * FROM GiaoDich";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        GiaoDich giaoDich = mapResultSetToGiaoDich(resultSet);
+                        giaoDichList.add(giaoDich);
+                    }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return giaoDichList;
+    }
+
+    @Override
+    public int countLoaiDat(String loaiDat) {
+        int count = 0;
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT COUNT(*) FROM GiaoDich WHERE LoaiDat = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, loaiDat);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        count = resultSet.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    @Override
+    public int countLoaiNha(String loaiNha) {
+        int count = 0;
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT COUNT(*) FROM GiaoDich WHERE LoaiNha = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, loaiNha);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        count = resultSet.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    @Override
+    public double averageThanhTienDat() {
+        double sum = 0;
+        int count = 0;
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT DonGia FROM GiaoDich WHERE LoaiDat = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, "dat");
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        sum += resultSet.getDouble("DonGia");
+                        count++;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (count == 0) {
+            return 0;
+        }
+        return sum / count;
+    }
+
+    @Override
+    public List<GiaoDich> searchGiaoDichByMa(String maGiaoDich) {
+        List<GiaoDich> giaoDichList = new ArrayList<>();
+        try (Connection connection = getConnection()) {
+            String sql = "SELECT * FROM GiaoDich WHERE MaGiaoDich = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, maGiaoDich);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        GiaoDich giaoDich = mapResultSetToGiaoDich(resultSet);
+                        giaoDichList.add(giaoDich);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return giaoDichList;
+    }
+
+   private GiaoDich mapResultSetToGiaoDich(ResultSet resultSet) throws SQLException {
+        String maGiaoDich = resultSet.getString("MaGiaoDich");
+        java.util.Date ngayGiaoDich = resultSet.getDate("NgayGiaoDich");
+        double donGia = resultSet.getDouble("DonGia");
+        double dienTich = resultSet.getDouble("DienTich");
+        String thongTinKhac = resultSet.getString("ThongTinKhac");
+        String loaiDat = resultSet.getString("LoaiDat");
+        String loaiNha = resultSet.getString("LoaiNha");
+
+        if ("dat".equalsIgnoreCase(loaiDat)) {
+            return new GiaoDichDat(maGiaoDich, ngayGiaoDich, donGia, dienTich, thongTinKhac);
+        } else if ("nha".equalsIgnoreCase(loaiNha)) {
+            return new GiaoDichNha(maGiaoDich, ngayGiaoDich, donGia, dienTich, thongTinKhac);
+        } else {
+            throw new IllegalArgumentException("Loại giao dịch không hợp lệ");
+        }
+    }
+
+    private void setPreparedStatementValues(PreparedStatement statement, GiaoDich giaoDich) throws SQLException {
+        statement.setString(1, giaoDich.getMaGiaoDich());
+        statement.setDate(2, new java.sql.Date(giaoDich.getNgayGiaoDich().getTime()));
+        statement.setDouble(3, giaoDich.getDonGia());
+        statement.setDouble(4, giaoDich.getDienTich());
+        statement.setString(5, giaoDich.getThongTinKhac());
     }
 }

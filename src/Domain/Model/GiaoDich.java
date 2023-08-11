@@ -1,4 +1,4 @@
-package Domain;
+package Domain.Model;
 
 import java.util.Date;
 
@@ -19,8 +19,7 @@ public abstract class GiaoDich {
 
     // Getters and setters (omitted for brevity)
 
-    public abstract double tinhThanhTien();
-
+   
     public String getMaGiaoDich() {
         return maGiaoDich;
     }
@@ -60,5 +59,12 @@ public abstract class GiaoDich {
     public void setThongTinKhac(String thongTinKhac) {
         this.thongTinKhac = thongTinKhac;
     }
+    @Override
+    public String toString() {
+        return "Mã giao dịch: " + maGiaoDich + ", Ngày giao dịch: " + ngayGiaoDich + ", Đơn giá: " + donGia
+                + ", Diện tích: " + dienTich + ", Thông tin khác: " + thongTinKhac + ", Thành tiền: " + tinhThanhTien();
+    }
 
+    public abstract double tinhThanhTien();
 }
+

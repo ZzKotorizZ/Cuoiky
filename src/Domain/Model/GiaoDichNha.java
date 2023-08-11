@@ -1,4 +1,4 @@
-package Domain;
+package Domain.Model;
 
 import java.util.Date;
 
@@ -6,7 +6,8 @@ public class GiaoDichNha extends GiaoDich {
     private String loaiNha;
 
     public GiaoDichNha(String maGiaoDich, Date ngayGiaoDich, double donGia, double dienTich, String thongTinKhac) {
-        super(maGiaoDich, ngayGiaoDich, donGia, dienTich, thongTinKhac);
+        super(maGiaoDich, ngayGiaoDich, donGia, dienTich, "");
+
         this.loaiNha = thongTinKhac;
     }
 
